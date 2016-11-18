@@ -1,17 +1,14 @@
 {
-  "name": "postcss-base64",
-  "version": "0.4.1",
-  "description": "Replace values in url() statements with base64 encoded strings.",
-  "author": "Jelmer de Maat",
+  "name": "postcss-imageconversion",
+  "version": "1.0.1",
+  "description": "base64 sprite",
+  "author": "cky",
   "keywords": [
     "base64",
-    "encode",
+    "sprite",
     "postcss-plugin",
     "postcss"
   ],
-  "scripts": {
-    "test": "ava"
-  },
   "dependencies": {
     "fs": "0.0.2",
     "postcss": "^5.0.12",
@@ -23,7 +20,6 @@
     "q": "1.4.1",
     "spritesmith": "3.1.0"
   },
-  "repository": "git@github.com:jelmerdemaat/postcss-base64.git",
   "devDependencies": {
     "ava": "^0.8.0",
     "chai": "3.4.1",
@@ -43,7 +39,5 @@
     "jscs": "3.0.4",
     "jshint": "2.8.0",
     "jshint-stylish": "2.1.0"
-  },
-  "_from": "postcss-base64@0.4.1",
-  "_resolved": "http://registry.npm.taobao.org/postcss-base64/download/postcss-base64-0.4.1.tgz"
+  }
 }
