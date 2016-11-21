@@ -3,25 +3,25 @@ var fs = require('fs'),
 
 function getUrl(value) {
     var reg = /url\((\s*)(['"]?)(.+?)\2(\s*)\)/g,
-        match = reg.exec(value),
-        url = match[3];
+        match = reg.exec(value);
+    var url = match[3];
     return url;
 }
 
 function replaceFiles(string, opts) {
-    string = string.split('#')[0];
     file = getUrl(string);
-    ext = file.split('.')[1];
+    var filePath = file.split('#')[0];
+    filePath = resolveUrl(filePath, opts.stylesheetPath, opts.imagePath);
+    ext = filePath.split('.')[1];
     if (ext === 'svg') ext = ext + '+xml';
-
-    fileContents = fs.readFileSync(file);
-    if (fs.statSync(file).size / 1024 < opts.maxSize) {
+    fileContents = fs.readFileSync(filePath);
+    if (fs.statSync(filePath).size / 1024 < opts.maxSize) {
         output = 'data:image/' + ext + ';base64,' + fileContents.toString('base64');
+        log('BASE64:', gutil.colors.green(filePath));
         return string.replace(file, output);
     } else {
         return string;
     }
-
 }
 
 function replaceInline(string, opts) {
@@ -67,7 +67,6 @@ function collectImages(css, opts) {
     if (!stylesheetPath) {
         throw 'Stylesheets path is undefined, please use option stylesheetPath!';
     }
-
     css.walkRules(function(rule) {
         var image = {
             path: null,
@@ -77,7 +76,6 @@ function collectImages(css, opts) {
             groups: [],
             token: '',
         };
-
         if (hasImageInRule(rule.toString())) {
             image.url = getImageUrl(rule.toString());
             var imageUrl = url.parse(image.url);
@@ -99,8 +97,7 @@ function collectImages(css, opts) {
             }
 
             // Get the path to the image.
-            image.path = resolveUrl(image, opts);
-
+            image.path = resolveUrl(image.url, image.stylesheetPath, opts.imagePath);
             // file exists
             if (!fs.existsSync(image.path)) {
                 log('Easysprites:', gutil.colors.red(image.path), 'file unreachable or not exists');
@@ -116,7 +113,6 @@ function collectImages(css, opts) {
             images.push(image);
         }
     });
-
     return lodash.uniqWith(images, lodash.isEqual);
 }
 
@@ -432,14 +428,13 @@ function mask(toggle) {
     };
 }
 
-function resolveUrl(image, opts) {
+function resolveUrl(url, stylesheetPath, imagePath) {
     var results;
-    if (/^\//.test(image.url)) {
-        results = path.resolve(opts.imagePath, image.url.replace(/^\//, ''));
+    if (/^\//.test(url)) {
+        results = path.resolve(opts.imagePath, url.replace(/^\//, ''));
     } else {
-        results = path.resolve(image.stylesheetPath, image.url);
+        results = path.resolve(stylesheetPath, url);
     }
-
     // get rid of get params and hash;
     return results.split('#')[0].split('?')[0];
 }
@@ -451,7 +446,7 @@ function resolveUrl(image, opts) {
  * @return {Boolean}
  */
 function hasImageInRule(rule) {
-    return /background[^:]*.*url[^;]+;/gi.test(rule);
+    return /background[^:]*.*url[^;]+/gi.test(rule);
 }
 
 /**
@@ -584,6 +579,9 @@ function areAllRetina(images) {
 module.exports = postcss.plugin('postcss-imageconversion', function(opts) {
     opts = opts || {};
 
+    //opts
+    opts = opts || {};
+
     opts.groupBy = opts.groupBy || [];
     opts.padding = opts.padding ? opts.padding : 10;
     opts.maxSize = opts.maxSize ? opts.maxSize : 20;
@@ -611,7 +609,6 @@ module.exports = postcss.plugin('postcss-imageconversion', function(opts) {
         if (opts.extensions) {
             exts = '\\' + opts.extensions.join('|\\');
             search = new RegExp('url\\(.*(' + exts + ').*\\)', 'i');
-
             css.replaceValues(search, function(string) {
                 return replaceFiles(string, opts);
             });
