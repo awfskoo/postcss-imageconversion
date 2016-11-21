@@ -1,7 +1,12 @@
 {
   "name": "postcss-imageconversion",
-  "version": "1.0.0",
-  "description": "base64 sprite",
+  "version": "1.1.0",
+  "description": "base64 and sprite",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awfskoo/postcss-imageconversion"
+  },
   "author": "cky",
   "keywords": [
     "base64",

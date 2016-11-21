@@ -80,6 +80,10 @@ function collectImages(css, opts) {
             image.url = getImageUrl(rule.toString());
             var imageUrl = url.parse(image.url);
 
+            if (!imageUrl.hash && imageUrl.pathname.indexOf(';base64') == -1) {
+                image.path = resolveUrl(image.url, image.stylesheetPath, opts.imagePath);
+                copyFile(image, opts.outImgPath);
+            }
             // only locals, hashed paths
             if (imageUrl.host ||
                 !imageUrl.hash ||
@@ -98,6 +102,7 @@ function collectImages(css, opts) {
 
             // Get the path to the image.
             image.path = resolveUrl(image.url, image.stylesheetPath, opts.imagePath);
+
             // file exists
             if (!fs.existsSync(image.path)) {
                 log('Easysprites:', gutil.colors.red(image.path), 'file unreachable or not exists');
@@ -114,6 +119,28 @@ function collectImages(css, opts) {
         }
     });
     return lodash.uniqWith(images, lodash.isEqual);
+}
+
+function copyFile(image, outImgPath) {
+    fs.readFile(image.path, function(err, data) {
+        if (err) {
+            log('copyFile: readFile:', gutil.colors.red(image.path), 'error:', err.message);
+        } else {
+            writeFile(data, outImgPath + image.path.slice(image.path.lastIndexOf('\\') + 1))
+            return data;
+        }
+    });
+}
+
+function writeFile(data, outNmae) {
+    fs.writeFile(outNmae, data, function(error) {
+        if (error) {
+            log('copyFile: readFile:', gutil.colors.red(outNmae), 'error:', error.message);
+            throw error;
+        } else {
+            log(gutil.colors.red(outNmae), 'copyed');
+        }
+    });
 }
 
 function applyGroupBy(images, opts) {
@@ -284,7 +311,6 @@ function runSpriteSmith(images, opts) {
 
 function saveSprites(images, opts, sprites) {
     return Q.Promise(function(resolve, reject) {
-
         if (!fs.existsSync(opts.spritePath)) {
             mkdirp.sync(opts.spritePath);
         }
@@ -335,7 +361,6 @@ function mapSpritesProperties(images, opts, sprites) {
     return Q.Promise(function(resolve) {
         sprites = lodash.map(sprites, function(sprite) {
             return lodash.map(sprite.coordinates, function(coordinates, imagePath) {
-
                 return lodash.merge(lodash.find(images, {
                     path: imagePath
                 }), {
@@ -363,7 +388,7 @@ function updateReferences(images, opts, sprites, css) {
 
                 if (image) {
                     // Generate correct ref to the sprite
-                    image.spriteRef = path.relative(image.stylesheetPath, image.spritePath);
+                    image.spriteRef = path.relative(opts.outCssPath, image.spritePath);
                     image.spriteRef = image.spriteRef.split(path.sep).join('/');
 
                     backgroundImage = postcss.decl({
@@ -588,7 +613,7 @@ module.exports = postcss.plugin('postcss-imageconversion', function(opts) {
 
     // paths
     opts.imagePath = path.resolve(process.cwd(), opts.imagePath || '');
-    opts.spritePath = path.resolve(process.cwd(), opts.spritePath || '');
+    opts.spritePath = path.resolve(process.cwd(), opts.outImgPath + 'sprite/' || '');
 
     // Group retina images
     opts.groupBy.unshift(function(image) {

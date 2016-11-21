@@ -19,12 +19,13 @@ gulp.task('postcss', function() {
 			maxSize: 15,
 			imagePath: './src/images/',
 			stylesheetPath: './src/postcss/',
-			spritePath: '/images/sprite/',
-			padding: 2
+			outCssPath: './dest/css/',
+			outImgPath: './dest/images/',
+			padding: 10
 		})
 	];
 	return gulp.src('src/postcss/*.css')
 		.pipe(postcss(processors))
-		.pipe(gulp.dest('/dext/css/'));
+		.pipe(gulp.dest('/dest/css/'));
 });
 ```
