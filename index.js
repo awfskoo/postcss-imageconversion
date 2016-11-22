@@ -12,10 +12,17 @@ function replaceFiles(string, opts) {
     file = getUrl(string);
     var filePath = file.split('#')[0];
     filePath = resolveUrl(filePath, opts.stylesheetPath, opts.imagePath);
-    ext = filePath.split('.')[1];
-    if (ext === 'svg') ext = ext + '+xml';
-    fileContents = fs.readFileSync(filePath);
+    if (!opts.ignoreSprite && file.split('#')[1] == null) {
+        return string;
+    }
+    if (!fs.existsSync(filePath)) {
+        log('BASE64:', gutil.colors.red(filePath), 'not exist');
+        return string;
+    }
     if (fs.statSync(filePath).size / 1024 < opts.maxSize) {
+        ext = filePath.split('.')[1];
+        if (ext === 'svg') ext = ext + '+xml';
+        fileContents = fs.readFileSync(filePath);
         output = 'data:image/' + ext + ';base64,' + fileContents.toString('base64');
         log('BASE64:', gutil.colors.green(filePath));
         return string.replace(file, output);
@@ -614,6 +621,8 @@ module.exports = postcss.plugin('postcss-imageconversion', function(opts) {
     // paths
     opts.imagePath = path.resolve(process.cwd(), opts.imagePath || '');
     opts.spritePath = path.resolve(process.cwd(), opts.outImgPath + 'sprite/' || '');
+
+    opts.ignoreSprite = opts.ignoreSprite != null ? opts.ignoreSprite : false; //if true,base64 whatever file size is under maxSize.
 
     // Group retina images
     opts.groupBy.unshift(function(image) {
